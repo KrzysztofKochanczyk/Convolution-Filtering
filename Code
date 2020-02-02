@@ -1,0 +1,99 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.signal as sig 
+
+
+image = plt.imread('peppers.png')
+
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
+img = rgb2gray(image)
+
+fig,ax = plt.subplots(2,2)
+
+h, w = img.shape
+
+sobel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+sobel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+newhorizontalImage = np.zeros((h, w))
+newverticalImage = np.zeros((h, w))
+newsobelImage = np.zeros((h, w))
+
+for i in range(1, h - 1):
+    for j in range(1, w - 1):
+        sobelhorizontal = (sobel_x[0, 0] * img[i - 1, j - 1]) + \
+                         (sobel_x[0, 1] * img[i - 1, j]) + \
+                         (sobel_x[0, 2] * img[i - 1, j + 1]) + \
+                         (sobel_x[1, 0] * img[i, j - 1]) + \
+                         (sobel_x[1, 1] * img[i, j]) + \
+                         (sobel_x[1, 2] * img[i, j + 1]) + \
+                         (sobel_x[2, 0] * img[i + 1, j - 1]) + \
+                         (sobel_x[2, 1] * img[i + 1, j]) + \
+                         (sobel_x[2, 2] * img[i + 1, j + 1])
+
+        newhorizontalImage[i - 1, j - 1] = abs(sobelhorizontal)
+
+        sobelvertical = (sobel_y[0, 0] * img[i - 1, j - 1]) + \
+                       (sobel_y[0, 1] * img[i - 1, j]) + \
+                       (sobel_y[0, 2] * img[i - 1, j + 1]) + \
+                       (sobel_y[1, 0] * img[i, j - 1]) + \
+                       (sobel_y[1, 1] * img[i, j]) + \
+                       (sobel_y[1, 2] * img[i, j + 1]) + \
+                       (sobel_y[2, 0] * img[i + 1, j - 1]) + \
+                       (sobel_y[2, 1] * img[i + 1, j]) + \
+                       (sobel_y[2, 2] * img[i + 1, j + 1])
+
+        newverticalImage[i - 1, j - 1] = abs(sobelvertical)
+
+        
+        edge1 = np.sqrt(pow(sobelhorizontal, 2.0) + pow(sobelvertical, 2.0))
+        newsobelImage[i - 1, j - 1] = edge1
+        
+newprewittImage = np.zeros((h, w))
+
+prewitt_x = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+prewitt_y = np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]]) 
+
+for i in range(1, h - 1):
+    for j in range(1, w - 1):
+        horizontalGrad = (prewitt_x[0, 0] * img[i - 1, j - 1]) + \
+                         (prewitt_x[0, 1] * img[i - 1, j]) + \
+                         (prewitt_x[0, 2] * img[i - 1, j + 1]) + \
+                         (prewitt_x[1, 0] * img[i, j - 1]) + \
+                         (prewitt_x[1, 1] * img[i, j]) + \
+                         (prewitt_x[1, 2] * img[i, j + 1]) + \
+                         (prewitt_x[2, 0] * img[i + 1, j - 1]) + \
+                         (prewitt_x[2, 1] * img[i + 1, j]) + \
+                         (prewitt_x[2, 2] * img[i + 1, j + 1])
+
+        verticalGrad = (prewitt_x[0, 0] * img[i - 1, j - 1]) + \
+                       (prewitt_x[0, 1] * img[i - 1, j]) + \
+                       (prewitt_x[0, 2] * img[i - 1, j + 1]) + \
+                       (prewitt_x[1, 0] * img[i, j - 1]) + \
+                       (prewitt_x[1, 1] * img[i, j]) + \
+                       (prewitt_x[1, 2] * img[i, j + 1]) + \
+                       (prewitt_x[2, 0] * img[i + 1, j - 1]) + \
+                       (prewitt_x[2, 1] * img[i + 1, j]) + \
+                       (prewitt_x[2, 2] * img[i + 1, j + 1])
+
+
+        edge2 = np.sqrt(pow(horizontalGrad, 2.0) + pow(verticalGrad, 2.0))
+        newprewittImage[i - 1, j - 1] = edge2
+        
+blur = np.ones((3,3))/9
+laplace= np.array([[0,1,0],[1,-4,1],[0,1,0]])
+
+imgblur= sig.convolve2d(img,blur)
+
+imgedge = np.clip(sig.convolve2d(img,laplace),0,1)
+
+
+ax[0,0].set_title('Original')
+ax[0,1].set_title('Sobel')
+ax[1,0].set_title('Prewitt')
+ax[1,1].set_title('Laplacian')
+
+ax[0,0].imshow(image)
+ax[0,1].imshow(newsobelImage, cmap = plt.cm.Greys_r)
+ax[1,0].imshow(newprewittImage, cmap = plt.cm.Greys_r)
+ax[1,1].imshow(imgedge, cmap = plt.cm.Greys_r)
